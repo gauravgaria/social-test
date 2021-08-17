@@ -38,6 +38,14 @@ const UserSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    desc: {
+      type: String,
+      max: 150,
+    },
+    current_city: {
+      type: String,
+      max: 50,
+    },
   },
   { timestamps: true } //auto generate createdAt and updatedAt fields
 );
