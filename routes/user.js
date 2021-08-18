@@ -49,7 +49,8 @@ router.delete("/:id", async (req, res) => {
 router.get("/:id", async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
-    res.status(200).json(user);
+    const { password, updatedAt, ...other } = user._doc; // saves pass & updAt from user._doc(all user data) and rest is stored in other var
+    res.status(200).json(other);
   } catch (err) {
     res.status(500).json(err);
   }
@@ -58,17 +59,39 @@ router.get("/:id", async (req, res) => {
 // follow/friend request user
 
 router.put("/:id/follow", async (req, res) => {
-  if (req.body.userId === req.params.id || req.body.isAdmin) {
+  if (req.body.userId !== req.params.id || req.body.isAdmin) {
     try {
-      const user = await User.findByIdAndDelete(req.params.id);
-
-      res.status(200).json("account deleted");
+      const user = await User.findById(req.params.id);
+      const currentUser = await User.findById(req.body.userId);
+      if (!user.friends.includes(req.body.userId)) {
+        await user.updateOne({ $push: { friends: req.body.userId } });
+        res.status(200).json("user followed");
+      } else {
+        res.send(403).json("already your friend");
+      }
     } catch (err) {}
   } else {
-    return res.status(403).json("you can only delete your account");
+    return res.status(403).json("some error");
   }
 });
 
 // un follow/unfriend request user
+
+router.put("/:id/unfollow", async (req, res) => {
+  if (req.body.userId !== req.params.id || req.body.isAdmin) {
+    try {
+      const user = await User.findById(req.params.id);
+      const currentUser = await User.findById(req.body.userId);
+      if (user.friends.includes(req.body.userId)) {
+        await user.updateOne({ $pull: { friends: req.body.userId } });
+        res.status(200).json("user unfollowed");
+      } else {
+        res.send(403).json("already your friend");
+      }
+    } catch (err) {}
+  } else {
+    return res.status(403).json("some error");
+  }
+});
 
 module.exports = router;
